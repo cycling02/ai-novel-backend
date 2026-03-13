@@ -4,24 +4,22 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cloudwego/eino/components/embedding"
 	"github.com/cloudwego/eino/components/retriever"
 	"github.com/cloudwego/eino/schema"
 	pinecone "github.com/pinecone-io/go-pinecone/v4/pinecone"
 )
-
-// EmbeddingFunc 向量化函数类型
-type EmbeddingFunc func(ctx context.Context, texts []string) ([][]float32, error)
 
 // PineconeRetriever Pinecone 向量检索器
 type PineconeRetriever struct {
 	client    *pinecone.Client
 	indexName string
 	namespace string
-	embedFn   EmbeddingFunc
+	embedding embedding.Embedder
 }
 
 // NewPineconeRetriever 创建 Pinecone Retriever
-func NewPineconeRetriever(apiKey, indexName, namespace string, embedFn EmbeddingFunc) (retriever.Retriever, error) {
+func NewPineconeRetriever(apiKey, indexName, namespace string, emb embedding.Embedder) (retriever.Retriever, error) {
 	client, err := pinecone.NewClient(pinecone.NewClientParams{
 		ApiKey: apiKey,
 	})
@@ -33,24 +31,23 @@ func NewPineconeRetriever(apiKey, indexName, namespace string, embedFn Embedding
 		client:    client,
 		indexName: indexName,
 		namespace: namespace,
-		embedFn:   embedFn,
+		embedding: emb,
 	}, nil
 }
 
 // Retrieve 检索相关文档
 func (r *PineconeRetriever) Retrieve(ctx context.Context, query string, opts ...retriever.Option) ([]*schema.Document, error) {
-	if r.embedFn == nil {
-		return nil, fmt.Errorf("向量化函数未配置")
+	if r.embedding == nil {
+		return nil, fmt.Errorf("embedding 未配置")
 	}
 
 	// 1. 将查询文本向量化
-	embeddings, err := r.embedFn(ctx, []string{query})
+	embeddings, err := r.embedding.EmbedStrings(ctx, []string{query})
 	if err != nil {
 		return nil, fmt.Errorf("向量化失败：%w", err)
 	}
 
 	if len(embeddings) == 0 || len(embeddings[0]) == 0 {
-		// 向量化失败，返回空结果
 		return []*schema.Document{}, nil
 	}
 
