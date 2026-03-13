@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  GO_VERSION: "1.25"
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREVIOUS_TAG" ]; then
+            git log --pretty=format:"* %s (%h)" > CHANGELOG.md
+          else
+            git log --pretty=format:"* %s (%h)" $PREVIOUS_TAG..HEAD > CHANGELOG.md
+          fi
+          echo "changelog=$(cat CHANGELOG.md)" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            ## 🚀 更新内容
+
+            ${{ steps.changelog.outputs.changelog }}
+
+            ## 📦 安装
+
+            ### 阿里云 FC
+            ```bash
+            s deploy
+            ```
+
+            ### Docker
+            ```bash
+            docker pull ${{ github.repository }}:${{ github.ref_name }}
+            ```
+
+            ## ✅ 验证
+
+            ```bash
+            curl https://your-domain.com/health
+            ```
+          files: |
+            dist/*
+          draft: false
+          prerelease: false
