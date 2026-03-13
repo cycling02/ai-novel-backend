@@ -1,9 +1,9 @@
 package components
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -46,22 +46,46 @@ func (m *OpenAICompatibleModel) Generate(ctx context.Context, input []*schema.Me
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", m.baseURL+"/chat/completions",
-		io.NopCloser(io.NopReader()))
+		bytes.NewReader(reqData))
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+m.apiKey)
-	req.Body = io.NopCloser(io.NopReader())
-	
-	// 简化实现，实际应该发送请求
-	_ = reqData
 
-	// 这里应该调用 API，简化返回
+	resp, err := m.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// 解析响应
+	var apiResp struct {
+		Choices []struct {
+			Message struct {
+				Role    string `json:"role"`
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+
+	if err := json.Unmarshal(respBody, &apiResp); err != nil {
+		return nil, err
+	}
+
+	if len(apiResp.Choices) == 0 {
+		return nil, nil
+	}
+
 	return &schema.Message{
 		Role:    schema.Assistant,
-		Content: "AI 生成的内容",
+		Content: apiResp.Choices[0].Message.Content,
 	}, nil
 }
 
@@ -71,12 +95,17 @@ func (m *OpenAICompatibleModel) Stream(ctx context.Context, input []*schema.Mess
 	sr, sw := schema.Pipe[*schema.Message](10)
 
 	go func() {
-		// 简化实现
-		sw.Send(&schema.Message{
-			Role:    schema.Assistant,
-			Content: "流式内容",
-		}, nil)
-		sw.Close()
+		defer sw.Close()
+		
+		// 简化实现：非流式模拟流式
+		msg, err := m.Generate(ctx, input, opts...)
+		if err != nil {
+			sw.Send(nil, err)
+			return
+		}
+		if msg != nil {
+			sw.Send(msg, nil)
+		}
 	}()
 
 	return sr, nil
