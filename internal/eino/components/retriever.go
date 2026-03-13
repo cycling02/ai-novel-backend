@@ -41,7 +41,7 @@ func (r *PineconeRetriever) Retrieve(ctx context.Context, query string, opts ...
 		return nil, fmt.Errorf("embedding 未配置")
 	}
 
-	// 1. 将查询文本向量化
+	// 1. 向量化查询
 	embeddings, err := r.embedding.EmbedStrings(ctx, []string{query})
 	if err != nil {
 		return nil, fmt.Errorf("向量化失败：%w", err)
@@ -68,7 +68,7 @@ func (r *PineconeRetriever) Retrieve(ctx context.Context, query string, opts ...
 		return nil, err
 	}
 
-	// 3. 转换为 Eino Document
+	// 3. 转换为 Document
 	docs := make([]*schema.Document, 0, len(resp.Matches))
 	for _, match := range resp.Matches {
 		content := ""
