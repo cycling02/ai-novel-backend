@@ -9,7 +9,8 @@ import (
 	"github.com/cloudwego/eino/components/prompt"
 	"github.com/cloudwego/eino/components/retriever"
 	"github.com/cloudwego/eino/components/tool"
-	"github.com/cloudwego/eino/schema"
+	"github.com/cloudwego/eino-ext/components/model/openai"
+	"github.com/cloudwego/eino-ext/components/embedding/openai"
 	"github.com/cycling02/ai-novel-backend/internal/config"
 )
 
@@ -24,7 +25,7 @@ type Components struct {
 
 // InitComponents 初始化所有 Eino 组件
 func InitComponents(cfg *config.Config) (*Components, error) {
-	chatModel, err := NewChatModel(cfg.LLM)
+	chatModel, err := initChatModel(cfg.LLM)
 	if err != nil {
 		return nil, fmt.Errorf("初始化 ChatModel 失败：%w", err)
 	}
@@ -33,10 +34,14 @@ func InitComponents(cfg *config.Config) (*Components, error) {
 	var ret retriever.Retriever
 
 	if cfg.Vector.APIKey != "" {
-		emb = NewEmbedding(cfg.LLM)
-		ret, err = NewPineconeRetriever(cfg.Vector.APIKey, cfg.Vector.IndexName, cfg.Vector.Namespace, emb)
+		emb, err = initEmbedding(cfg.LLM)
 		if err != nil {
-			fmt.Printf("警告：Retriever 初始化失败：%v\n", err)
+			fmt.Printf("警告：Embedding 初始化失败：%v\n", err)
+		} else {
+			ret, err = NewPineconeRetriever(cfg.Vector.APIKey, cfg.Vector.IndexName, cfg.Vector.Namespace, emb)
+			if err != nil {
+				fmt.Printf("警告：Retriever 初始化失败：%v\n", err)
+			}
 		}
 	}
 
@@ -47,6 +52,35 @@ func InitComponents(cfg *config.Config) (*Components, error) {
 		ChatTemplate: NewNovelChatTemplate(),
 		Tools:        initNovelTools(),
 	}, nil
+}
+
+// initChatModel 初始化 ChatModel（使用 OpenAI 兼容接口支持 DeepSeek）
+func initChatModel(cfg config.LLMConfig) (model.ChatModel, error) {
+	baseURL := cfg.BaseURL
+	if baseURL == "" {
+		baseURL = "https://api.deepseek.com"
+	}
+
+	// 使用 eino-ext 的 OpenAI 兼容模型
+	return openai.NewChatModel(context.Background(), &openai.ChatModelConfig{
+		Model:   cfg.Model,
+		APIKey:  cfg.APIKey,
+		BaseURL: baseURL,
+	})
+}
+
+// initEmbedding 初始化 Embedding
+func initEmbedding(cfg config.LLMConfig) (embedding.Embedder, error) {
+	baseURL := cfg.BaseURL
+	if baseURL == "" {
+		baseURL = "https://api.deepseek.com"
+	}
+
+	return openai.NewEmbedder(context.Background(), &openai.EmbeddingConfig{
+		Model:   "text-embedding-3-small",
+		APIKey:  cfg.APIKey,
+		BaseURL: baseURL,
+	})
 }
 
 // initNovelTools 初始化小说创作工具
