@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write
-  packages: write
 
 env:
   GO_VERSION: "1.25"
@@ -29,15 +28,6 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Generate changelog
         id: changelog
         run: |
@@ -57,16 +47,11 @@ jobs:
 
             ${{ steps.changelog.outputs.changelog }}
 
-            ## 📦 安装
+            ## 📦 部署
 
             ### 阿里云 FC
             ```bash
             s deploy
-            ```
-
-            ### Docker
-            ```bash
-            docker pull ${{ github.repository }}:${{ github.ref_name }}
             ```
 
             ## ✅ 验证
@@ -74,7 +59,5 @@ jobs:
             ```bash
             curl https://your-domain.com/health
             ```
-          files: |
-            dist/*
           draft: false
           prerelease: false

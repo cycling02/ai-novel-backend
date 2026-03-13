@@ -24,8 +24,6 @@
 | `DEEPSEEK_API_KEY` | DeepSeek API Key | `sk-xxxxxxxxxxxxx` | ✅ | LLM 调用 |
 | `OPENAI_API_KEY` | OpenAI API Key (可选) | `sk-xxxxxxxxxxxxx` | ❌ | 备用 LLM |
 | `JWT_SECRET` | JWT 签名密钥 | `your-super-secret-key` | ✅ | 用户认证 |
-| `DOCKER_USERNAME` | Docker Hub 用户名 | `yourname` | ❌ | Docker 镜像推送 |
-| `DOCKER_PASSWORD` | Docker Hub 密码/Token | `xxxxxxxxxxxxx` | ❌ | Docker 登录 |
 | `CODECOV_TOKEN` | Codecov Token (可选) | `xxxxxxxxxxxxx` | ❌ | 测试覆盖率 |
 
 ### 如何获取
@@ -49,6 +47,11 @@
 1. 访问 https://platform.deepseek.com/
 2. 进入 API Keys 页面
 3. 创建并复制 API Key
+
+#### Codecov (可选)
+1. 访问 https://about.codecov.io/
+2. 注册并添加 GitHub 项目
+3. 获取 Upload Token
 
 ---
 
@@ -107,8 +110,6 @@
 
 ### 可选配置
 - [ ] `OPENAI_API_KEY` (备用 LLM)
-- [ ] `DOCKER_USERNAME` (Docker 镜像)
-- [ ] `DOCKER_PASSWORD` (Docker 镜像)
 - [ ] `CODECOV_TOKEN` (测试覆盖率)
 
 ---
@@ -131,14 +132,11 @@
 
 ### 3. 测试 API
 ```bash
-# 获取部署的域名
-DOMAIN=$(s domain)
-
 # 健康检查
-curl $DOMAIN/health
+curl https://your-fc-domain.com/health
 
 # 创建测试小说
-curl -X POST $DOMAIN/api/v1/novels \
+curl -X POST https://your-fc-domain.com/api/v1/novels \
   -H "Content-Type: application/json" \
   -d '{"title":"测试小说","description":"测试","genre":"玄幻"}'
 ```
