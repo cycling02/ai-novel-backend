@@ -22,6 +22,9 @@
 | `DATABASE_URL` | Neon PostgreSQL 连接字符串 | `postgres://user:pass@host:5432/db?sslmode=require` | ✅ | 数据库连接 |
 | `PINECONE_API_KEY` | Pinecone API Key | `pcsk_xxxxxxxxxxxxx` | ✅ | 向量数据库 |
 | `DEEPSEEK_API_KEY` | DeepSeek API Key | `sk-xxxxxxxxxxxxx` | ✅ | LLM 调用 |
+| `MINIMAX_API_KEY` | MiniMax API Key | `xxxxxxxxxxxxx` | ❌ | MiniMax 模型 |
+| `ZHIPU_API_KEY` | 智谱 AI API Key | `xxxxxxxxxxxxx` | ❌ | GLM 模型 |
+| `MOONSHOT_API_KEY` | 月之暗面 API Key | `xxxxxxxxxxxxx` | ❌ | Kimi 模型 |
 | `OPENAI_API_KEY` | OpenAI API Key (可选) | `sk-xxxxxxxxxxxxx` | ❌ | 备用 LLM |
 | `JWT_SECRET` | JWT 签名密钥 | `your-super-secret-key` | ✅ | 用户认证 |
 | `CODECOV_TOKEN` | Codecov Token (可选) | `xxxxxxxxxxxxx` | ❌ | 测试覆盖率 |
@@ -45,8 +48,27 @@
 
 #### DeepSeek
 1. 访问 https://platform.deepseek.com/
-2. 进入 API Keys 页面
-3. 创建并复制 API Key
+2. 登录/注册账号
+3. 进入 API Keys 页面
+4. 创建并复制 API Key
+
+#### MiniMax
+1. 访问 https://platform.minimaxi.com/
+2. 登录/注册账号
+3. 进入 API 管理页面
+4. 创建 API Key
+
+#### 智谱 AI
+1. 访问 https://open.bigmodel.cn/
+2. 登录/注册账号
+3. 进入 API 控制台
+4. 创建 API Key
+
+#### 月之暗面 (Kimi)
+1. 访问 https://platform.moonshot.cn/
+2. 登录/注册账号
+3. 进入 API 管理页面
+4. 创建 API Key
 
 #### Codecov (可选)
 1. 访问 https://about.codecov.io/
