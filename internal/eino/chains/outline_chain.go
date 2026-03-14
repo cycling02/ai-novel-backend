@@ -2,6 +2,7 @@ package chains
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/cloudwego/eino/compose"
@@ -11,24 +12,17 @@ import (
 
 // OutlineExpandChain 大纲扩写链
 type OutlineExpandChain struct {
-	chain *compose.Chain[map[string]any, string]
+	chain   *compose.Chain[map[string]any, string]
+	runnable compose.Runnable[map[string]any, string]
 }
 
 // NewOutlineExpandChain 创建大纲扩写链
 func NewOutlineExpandChain(components *components.Components) (*OutlineExpandChain, error) {
 	chain := compose.NewChain[map[string]any, string]()
 
-	// Node 1: 格式化提示词
-	chain = chain.AppendLambda(
-		compose.InvokableLambda(func(ctx context.Context, input map[string]any) ([]*schema.Message, error) {
-			template := components.ChatTemplate
-			args := map[string]any{
-				"NovelTitle":   input["novel_title"],
-				"Genre":        input["genre"],
-				"BriefOutline": input["brief_outline"],
-			}
-			return template.Format(ctx, "expand_outline", args)
-		}),
+	// Node 1: ChatTemplate
+	chain = chain.AppendChatTemplate(
+		components.ChatTemplate,
 		compose.WithNodeName("PromptFormat"),
 	)
 
@@ -37,20 +31,44 @@ func NewOutlineExpandChain(components *components.Components) (*OutlineExpandCha
 
 	// Node 3: 解析输出
 	chain = chain.AppendLambda(
-		compose.InvokableLambda(func(ctx context.Context, msg *schema.Message) (string, error) {
-			content := msg.Content
+		compose.InvokableLambda(func(ctx context.Context, input any) (string, error) {
+			content := ""
+			switch msg := input.(type) {
+			case *schema.Message:
+				content = msg.Content
+			case schema.Message:
+				content = msg.Content
+			default:
+				content = fmt.Sprintf("%v", input)
+			}
 			// 解析结构化大纲
 			return parseOutline(content), nil
 		}),
 		compose.WithNodeName("OutputParse"),
 	)
 
-	return &OutlineExpandChain{chain: chain}, nil
+	// 编译 Chain
+	rCtx := context.Background()
+	runnable, err := chain.Compile(rCtx)
+	if err != nil {
+		return nil, fmt.Errorf("编译 Chain 失败：%w", err)
+	}
+
+	return &OutlineExpandChain{
+		chain:   chain,
+		runnable: runnable,
+	}, nil
 }
 
 // Expand 扩写大纲
 func (c *OutlineExpandChain) Expand(ctx context.Context, input map[string]any) (string, error) {
-	return c.chain.Invoke(ctx, input)
+	args := map[string]any{
+		"template_name": "expand_outline",
+		"NovelTitle":   input["novel_title"],
+		"Genre":        input["genre"],
+		"BriefOutline": input["brief_outline"],
+	}
+	return c.runnable.Invoke(ctx, args)
 }
 
 func parseOutline(content string) string {
@@ -60,25 +78,17 @@ func parseOutline(content string) string {
 
 // PlotSuggestChain 情节建议链
 type PlotSuggestChain struct {
-	chain *compose.Chain[map[string]any, []string]
+	chain   *compose.Chain[map[string]any, []string]
+	runnable compose.Runnable[map[string]any, []string]
 }
 
 // NewPlotSuggestChain 创建情节建议链
 func NewPlotSuggestChain(components *components.Components) (*PlotSuggestChain, error) {
 	chain := compose.NewChain[map[string]any, []string]()
 
-	// Node 1: 格式化提示词
-	chain = chain.AppendLambda(
-		compose.InvokableLambda(func(ctx context.Context, input map[string]any) ([]*schema.Message, error) {
-			template := components.ChatTemplate
-			args := map[string]any{
-				"NovelTitle":    input["novel_title"],
-				"Genre":         input["genre"],
-				"Summary":       input["summary"],
-				"WorldSettings": input["world_settings"],
-			}
-			return template.Format(ctx, "suggest_plot", args)
-		}),
+	// Node 1: ChatTemplate
+	chain = chain.AppendChatTemplate(
+		components.ChatTemplate,
 		compose.WithNodeName("PromptFormat"),
 	)
 
@@ -87,18 +97,44 @@ func NewPlotSuggestChain(components *components.Components) (*PlotSuggestChain, 
 
 	// Node 3: 解析建议列表
 	chain = chain.AppendLambda(
-		compose.InvokableLambda(func(ctx context.Context, msg *schema.Message) ([]string, error) {
-			return parseSuggestions(msg.Content), nil
+		compose.InvokableLambda(func(ctx context.Context, input any) ([]string, error) {
+			content := ""
+			switch msg := input.(type) {
+			case *schema.Message:
+				content = msg.Content
+			case schema.Message:
+				content = msg.Content
+			default:
+				content = fmt.Sprintf("%v", input)
+			}
+			return parseSuggestions(content), nil
 		}),
 		compose.WithNodeName("SuggestionParse"),
 	)
 
-	return &PlotSuggestChain{chain: chain}, nil
+	// 编译 Chain
+	rCtx := context.Background()
+	runnable, err := chain.Compile(rCtx)
+	if err != nil {
+		return nil, fmt.Errorf("编译 Chain 失败：%w", err)
+	}
+
+	return &PlotSuggestChain{
+		chain:   chain,
+		runnable: runnable,
+	}, nil
 }
 
 // Suggest 获取情节建议
 func (c *PlotSuggestChain) Suggest(ctx context.Context, input map[string]any) ([]string, error) {
-	return c.chain.Invoke(ctx, input)
+	args := map[string]any{
+		"template_name":  "suggest_plot",
+		"NovelTitle":    input["novel_title"],
+		"Genre":         input["genre"],
+		"Summary":       input["summary"],
+		"WorldSettings": input["world_settings"],
+	}
+	return c.runnable.Invoke(ctx, args)
 }
 
 func parseSuggestions(content string) []string {

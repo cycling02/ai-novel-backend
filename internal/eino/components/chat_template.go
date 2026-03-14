@@ -89,16 +89,25 @@ func NewNovelChatTemplate() prompt.ChatTemplate {
 	}
 }
 
-// Format 格式化提示词
-func (t *NovelChatTemplate) Format(ctx context.Context, templateName string, args map[string]any) ([]*schema.Message, error) {
+// Format 格式化提示词 - 实现 prompt.ChatTemplate 接口
+func (t *NovelChatTemplate) Format(ctx context.Context, vs map[string]any, opts ...prompt.Option) ([]*schema.Message, error) {
+	// 从 vs 中获取 template_name，默认为 generate_chapter
+	templateName, ok := vs["template_name"].(string)
+	if !ok || templateName == "" {
+		templateName = "generate_chapter"
+	}
+
 	tmpl, ok := t.templates[templateName]
 	if !ok {
 		return nil, fmt.Errorf("模板不存在：%s", templateName)
 	}
 
-	// 简单的模板替换（实际应该使用 text/template）
+	// 简单的模板替换
 	content := tmpl
-	for key, value := range args {
+	for key, value := range vs {
+		if key == "template_name" {
+			continue
+		}
 		placeholder := "{{." + key + "}}"
 		content = replacePlaceholder(content, placeholder, fmt.Sprintf("%v", value))
 	}
@@ -117,5 +126,19 @@ func (t *NovelChatTemplate) Format(ctx context.Context, templateName string, arg
 
 func replacePlaceholder(content, placeholder, value string) string {
 	// 简单替换实现
-	return content
+	result := content
+	for len(result) > 0 {
+		idx := -1
+		for i := 0; i <= len(result)-len(placeholder); i++ {
+			if result[i:i+len(placeholder)] == placeholder {
+				idx = i
+				break
+			}
+		}
+		if idx == -1 {
+			break
+		}
+		result = result[:idx] + value + result[idx+len(placeholder):]
+	}
+	return result
 }

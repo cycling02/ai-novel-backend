@@ -11,18 +11,19 @@ import (
 
 // NovelCreationGraph 小说创作图（多阶段流程）
 type NovelCreationGraph struct {
-	graph *compose.Graph[map[string]any, map[string]any]
+	graph    *compose.Graph[map[string]any, map[string]any]
+	runnable compose.Runnable[map[string]any, map[string]any]
 }
 
 // NovelCreationState 创作状态
 type NovelCreationState struct {
-	Stage       string
-	NovelTitle  string
-	Genre       string
-	Outline     string
-	ChapterTitle string
-	Content     string
-	Feedback    string
+	Stage         string
+	NovelTitle    string
+	Genre         string
+	Outline       string
+	ChapterTitle  string
+	Content       string
+	Feedback      string
 }
 
 // NewNovelCreationGraph 创建小说创作图
@@ -93,7 +94,6 @@ func NewNovelCreationGraph(components *components.Components) (*NovelCreationGra
 			}
 			return output, nil
 		}),
-		compose.WithInputKeys([]string{"characters", "world_settings"}),
 	)
 
 	// Node 5: 内容审核
@@ -121,20 +121,24 @@ func NewNovelCreationGraph(components *components.Components) (*NovelCreationGra
 	graph.AddEdge("chapter_writer", "content_reviewer")
 
 	// 编译 Graph
-	compiled, err := graph.Compile(ctx)
+	rCtx := context.Background()
+	runnable, err := graph.Compile(rCtx)
 	if err != nil {
 		return nil, fmt.Errorf("编译 Graph 失败：%w", err)
 	}
 
-	return &NovelCreationGraph{graph: compiled}, nil
+	return &NovelCreationGraph{
+		graph:    graph,
+		runnable: runnable,
+	}, nil
 }
 
 // Create 执行创作流程
 func (g *NovelCreationGraph) Create(ctx context.Context, input map[string]any) (map[string]any, error) {
-	return g.graph.Invoke(ctx, input)
+	return g.runnable.Invoke(ctx, input)
 }
 
 // CreateStream 流式执行
 func (g *NovelCreationGraph) CreateStream(ctx context.Context, input map[string]any) (*schema.StreamReader[map[string]any], error) {
-	return g.graph.Stream(ctx, input)
+	return g.runnable.Stream(ctx, input)
 }

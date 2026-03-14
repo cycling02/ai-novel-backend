@@ -10,8 +10,9 @@ import (
 	"github.com/cloudwego/eino/components/retriever"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino-ext/components/model/openai"
-	"github.com/cloudwego/eino-ext/components/embedding/openai"
+	openaiemb "github.com/cloudwego/eino-ext/components/embedding/openai"
 	"github.com/cycling02/ai-novel-backend/internal/config"
+	"github.com/cycling02/ai-novel-backend/internal/eino/tools"
 )
 
 // Components 包含所有 Eino 组件
@@ -76,7 +77,7 @@ func initEmbedding(cfg config.LLMConfig) (embedding.Embedder, error) {
 		baseURL = "https://api.deepseek.com"
 	}
 
-	return openai.NewEmbedder(context.Background(), &openai.EmbeddingConfig{
+	return openaiemb.NewEmbedder(context.Background(), &openaiemb.EmbeddingConfig{
 		Model:   "text-embedding-3-small",
 		APIKey:  cfg.APIKey,
 		BaseURL: baseURL,
@@ -86,9 +87,9 @@ func initEmbedding(cfg config.LLMConfig) (embedding.Embedder, error) {
 // initNovelTools 初始化小说创作工具
 func initNovelTools() []tool.BaseTool {
 	return []tool.BaseTool{
-		NewCharacterQueryTool(),
-		NewWorldSettingQueryTool(),
-		NewPlotOutlineTool(),
-		NewStyleTransferTool(),
+		tools.NewCharacterQueryTool(),
+		tools.NewWorldSettingQueryTool(),
+		tools.NewPlotOutlineTool(),
+		tools.NewStyleTransferTool(),
 	}
 }

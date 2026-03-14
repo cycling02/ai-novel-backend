@@ -162,12 +162,4 @@ func mapToChapter(row map[string]interface{}) *model.Chapter {
 	}
 }
 
-func getBool(v interface{}) bool {
-	if v == nil {
-		return false
-	}
-	if b, ok := v.(bool); ok {
-		return b
-	}
-	return false
-}
+

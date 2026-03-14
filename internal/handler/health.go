@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -10,11 +11,11 @@ import (
 // HealthHandler 健康检查处理器
 type HealthHandler struct {
 	startTime time.Time
-	dbCheck   func() error
+	dbCheck   func(context.Context) error
 }
 
 // NewHealthHandler 创建健康检查处理器
-func NewHealthHandler(dbCheck func() error) *HealthHandler {
+func NewHealthHandler(dbCheck func(context.Context) error) *HealthHandler {
 	return &HealthHandler{
 		startTime: time.Now(),
 		dbCheck:   dbCheck,
@@ -29,7 +30,7 @@ func (h *HealthHandler) Health(c *gin.Context) {
 
 	// 检查数据库
 	if h.dbCheck != nil {
-		if err := h.dbCheck(); err != nil {
+		if err := h.dbCheck(c.Request.Context()); err != nil {
 			status = "unhealthy"
 			services["database"] = gin.H{
 				"status": "unhealthy",
@@ -52,7 +53,7 @@ func (h *HealthHandler) Health(c *gin.Context) {
 // GET /health/ready
 func (h *HealthHandler) Ready(c *gin.Context) {
 	if h.dbCheck != nil {
-		if err := h.dbCheck(); err != nil {
+		if err := h.dbCheck(c.Request.Context()); err != nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not ready", "error": err.Error()})
 			return
 		}

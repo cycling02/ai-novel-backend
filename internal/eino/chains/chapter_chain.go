@@ -11,7 +11,8 @@ import (
 
 // ChapterGenerateChain 章节生成链
 type ChapterGenerateChain struct {
-	chain *compose.Chain[map[string]any, string]
+	chain   *compose.Chain[map[string]any, string]
+	runnable compose.Runnable[map[string]any, string]
 }
 
 // NewChapterGenerateChain 创建章节生成链
@@ -35,22 +36,8 @@ func NewChapterGenerateChain(components *components.Components) (*ChapterGenerat
 	)
 
 	// Node 2: ChatTemplate - 格式化提示词
-	chain = chain.AppendLambda(
-		compose.InvokableLambda(func(ctx context.Context, input map[string]any) ([]*schema.Message, error) {
-			template := components.ChatTemplate
-
-			args := map[string]any{
-				"NovelTitle":    input["novel_title"],
-				"Genre":         input["genre"],
-				"ChapterTitle":  input["chapter_title"],
-				"Outline":       input["outline"],
-				"PrevContent":   input["prev_content"],
-				"WorldSettings": input["world_settings"],
-				"Characters":    input["characters"],
-			}
-
-			return template.Format(ctx, "generate_chapter", args)
-		}),
+	chain = chain.AppendChatTemplate(
+		components.ChatTemplate,
 		compose.WithNodeName("PromptFormat"),
 	)
 
@@ -62,18 +49,48 @@ func NewChapterGenerateChain(components *components.Components) (*ChapterGenerat
 
 	// Node 4: Lambda - 后处理
 	chain = chain.AppendLambda(
-		compose.InvokableLambda(func(ctx context.Context, msg *schema.Message) (string, error) {
-			return msg.Content, nil
+		compose.InvokableLambda(func(ctx context.Context, input any) (string, error) {
+			// 从 schema.Message 提取内容
+			switch msg := input.(type) {
+			case *schema.Message:
+				return msg.Content, nil
+			case schema.Message:
+				return msg.Content, nil
+			default:
+				return fmt.Sprintf("%v", input), nil
+			}
 		}),
 		compose.WithNodeName("OutputProcess"),
 	)
 
-	return &ChapterGenerateChain{chain: chain}, nil
+	// 编译 Chain
+	ctx := context.Background()
+	runnable, err := chain.Compile(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("编译 Chain 失败：%w", err)
+	}
+
+	return &ChapterGenerateChain{
+		chain:   chain,
+		runnable: runnable,
+	}, nil
 }
 
 // Generate 生成章节
 func (c *ChapterGenerateChain) Generate(ctx context.Context, input map[string]any) (string, error) {
-	result, err := c.chain.Invoke(ctx, input)
+	// 准备模板变量
+	args := map[string]any{
+		"template_name": "generate_chapter",
+		"NovelTitle":    input["novel_title"],
+		"Genre":         input["genre"],
+		"ChapterTitle":  input["chapter_title"],
+		"Outline":       input["outline"],
+		"PrevContent":   input["prev_content"],
+		"WorldSettings": input["world_settings"],
+		"Characters":    input["characters"],
+	}
+
+	result, err := c.runnable.Invoke(ctx, args)
 	if err != nil {
 		return "", fmt.Errorf("生成章节失败：%w", err)
 	}
@@ -82,8 +99,20 @@ func (c *ChapterGenerateChain) Generate(ctx context.Context, input map[string]an
 
 // GenerateStream 流式生成章节
 func (c *ChapterGenerateChain) GenerateStream(ctx context.Context, input map[string]any) (*schema.StreamReader[string], error) {
+	// 准备模板变量
+	args := map[string]any{
+		"template_name": "generate_chapter",
+		"NovelTitle":    input["novel_title"],
+		"Genre":         input["genre"],
+		"ChapterTitle":  input["chapter_title"],
+		"Outline":       input["outline"],
+		"PrevContent":   input["prev_content"],
+		"WorldSettings": input["world_settings"],
+		"Characters":    input["characters"],
+	}
+
 	// 获取流式输出
-	streamReader, err := c.chain.Stream(ctx, input)
+	streamReader, err := c.runnable.Stream(ctx, args)
 	if err != nil {
 		return nil, err
 	}

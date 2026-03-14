@@ -5,6 +5,9 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // PostgresDB PostgreSQL 数据库连接
@@ -80,4 +83,21 @@ func (db *PostgresDB) QueryRow(ctx context.Context, query string, args ...interf
 		return nil, nil
 	}
 	return results[0], nil
+}
+
+// NewGormDB 创建 GORM 数据库连接
+func NewGormDB(url string) (*gorm.DB, error) {
+	db, err := gorm.Open(postgres.Open(url), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("创建 GORM 连接失败：%w", err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+	sqlDB.SetMaxOpenConns(10)
+	sqlDB.SetMaxIdleConns(5)
+	return db, nil
 }

@@ -106,14 +106,7 @@ type SuggestionItem struct {
 	Risk      string  `json:"risk"`       // 可能风险
 }
 
-// User 用户
-type User struct {
-	ID        string    `json:"id"`
-	Email     string    `json:"email"`
-	Nickname  string    `json:"nickname"`
-	Avatar    string    `json:"avatar"`
-	CreatedAt time.Time `json:"created_at"`
-}
+
 
 // GenerationRequest AI 生成请求
 type GenerationRequest struct {

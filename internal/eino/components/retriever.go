@@ -51,34 +51,64 @@ func (r *PineconeRetriever) Retrieve(ctx context.Context, query string, opts ...
 		return []*schema.Document{}, nil
 	}
 
-	// 2. 查询 Pinecone
-	index, err := r.client.Index(r.indexName)
+	// 转换 float64 到 float32
+	vectorFloat32 := make([]float32, len(embeddings[0]))
+	for i, v := range embeddings[0] {
+		vectorFloat32[i] = float32(v)
+	}
+
+	// 2. 描述索引获取 Host
+	indexDesc, err := r.client.DescribeIndex(ctx, r.indexName)
 	if err != nil {
-		return nil, fmt.Errorf("获取索引失败：%w", err)
+		return nil, fmt.Errorf("获取索引信息失败：%w", err)
+	}
+
+	// 3. 创建索引连接
+	idxConnParams := pinecone.NewIndexConnParams{
+		Host:      indexDesc.Host,
+		Namespace: r.namespace,
+	}
+	index, err := r.client.Index(idxConnParams)
+	if err != nil {
+		return nil, fmt.Errorf("连接索引失败：%w", err)
 	}
 	defer index.Close()
 
-	resp, err := index.QueryVector(ctx, &pinecone.QueryVectorRequest{
-		Vector:          embeddings[0],
+	// 4. 查询 Pinecone
+	resp, err := index.QueryByVectorValues(ctx, &pinecone.QueryByVectorValuesRequest{
+		Vector:          vectorFloat32,
 		TopK:            5,
-		Namespace:       r.namespace,
 		IncludeMetadata: true,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. 转换为 Document
+	// 5. 转换为 Document
 	docs := make([]*schema.Document, 0, len(resp.Matches))
 	for _, match := range resp.Matches {
-		content := ""
-		if c, ok := match.Metadata["content"].(string); ok {
-			content = c
+		if match.Vector == nil {
+			continue
 		}
+
+		content := ""
+		if match.Vector.Metadata != nil {
+			metaMap := match.Vector.Metadata.AsMap()
+			if c, ok := metaMap["content"].(string); ok {
+				content = c
+			}
+		}
+
+		// 转换 metadata
+		meta := make(map[string]any)
+		if match.Vector.Metadata != nil {
+			meta = match.Vector.Metadata.AsMap()
+		}
+
 		docs = append(docs, &schema.Document{
-			ID:      match.ID,
-			Content: content,
-			Meta:    match.Metadata,
+			ID:       match.Vector.Id,
+			Content:  content,
+			MetaData: meta,
 		})
 	}
 
