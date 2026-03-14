@@ -20,6 +20,11 @@ env:
   GO_VERSION: "1.25"
   ALIYUN_REGION: "ap-southeast-1"
 
+# 配置非敏感变量（在 GitHub 仓库 Settings -> Variables 中配置）
+# LLM_PROVIDER: deepseek
+# LLM_BASE_URL: https://api.deepseek.com
+# LLM_MODEL: deepseek-chat
+
 jobs:
   # ========== 构建 ==========
   build:
@@ -103,6 +108,14 @@ jobs:
 
       - name: Deploy to Aliyun FC
         id: deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+          LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
         run: |
           s deploy -y
 
