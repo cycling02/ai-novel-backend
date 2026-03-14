@@ -8,6 +8,7 @@ vars:
     name: ai-novel-service
     description: AI 网络小说创作后端服务
     internetAccess: true
+  image: registry.ap-southeast-1.aliyuncs.com/${vars.accountID}/ai-novel-backend:${vars.version}
 
 resources:
   ai-novel-function:
@@ -17,32 +18,14 @@ resources:
       service: ${vars.service}
       function:
         name: ai-novel-backend
-        description: AI 小说创作 API
-        runtime: custom
+        description: AI 小说创作 API (Custom Container)
+        runtime: container
         codeUri: ./
-        handler: main
+        handler: ai-novel-backend
         memorySize: 1024
         timeout: 120
         diskSize: 512
-        layers:
-          - acs:fc:${vars.region}:official:layers/Go1.25/versions/1
-        environmentVariables:
-          SERVER_MODE: "release"
-          SERVER_PORT: "8080"
-          DATABASE_URL: ${env(DATABASE_URL), default=""}
-          PINECONE_API_KEY: ${env(PINECONE_API_KEY), default=""}
-          PINECONE_INDEX_NAME: ${env(PINECONE_INDEX_NAME), default=""}
-          PINECONE_NAMESPACE: ${env(PINECONE_NAMESPACE), default=""}
-          LLM_PROVIDER: ${env(LLM_PROVIDER), default="deepseek"}
-          LLM_BASE_URL: ${env(LLM_BASE_URL), default="https://api.deepseek.com"}
-          LLM_MODEL: ${env(LLM_MODEL), default="deepseek-chat"}
-          DEEPSEEK_API_KEY: ${env(DEEPSEEK_API_KEY), default=""}
-          OPENAI_API_KEY: ${env(OPENAI_API_KEY), default=""}
-          JWT_SECRET: ${env(JWT_SECRET), default=""}
-        customRuntimeConfig:
-          command:
-            - ./ai-novel-backend
-          port: 8080
+        port: 8080
 
       triggers:
         - name: httpTrigger
