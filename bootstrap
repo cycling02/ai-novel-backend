@@ -1,0 +1,10 @@
+#!/bin/sh
+# 阿里云函数计算 FC 3.0 入口文件
+# 预编译的二进制文件名必须是 main（会在构建后重命名）
+
+# 确保可执行
+chmod +x ./ai-novel-backend
+
+# 启动应用
+# FC 会自动设置 FC_SERVER_PORT 环境变量
+exec ./ai-novel-backend
