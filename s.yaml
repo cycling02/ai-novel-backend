@@ -29,16 +29,16 @@ resources:
         environmentVariables:
           SERVER_MODE: "release"
           SERVER_PORT: "8080"
-          DATABASE_URL: ${env(DATABASE_URL)}
-          PINECONE_API_KEY: ${env(PINECONE_API_KEY)}
-          PINECONE_INDEX_NAME: ${env(PINECONE_INDEX_NAME)}
-          PINECONE_NAMESPACE: ${env(PINECONE_NAMESPACE)}
-          LLM_PROVIDER: ${env(LLM_PROVIDER)}
-          LLM_BASE_URL: ${env(LLM_BASE_URL)}
-          LLM_MODEL: ${env(LLM_MODEL)}
-          DEEPSEEK_API_KEY: ${env(DEEPSEEK_API_KEY)}
-          OPENAI_API_KEY: ${env(OPENAI_API_KEY)}
-          JWT_SECRET: ${env(JWT_SECRET)}
+          DATABASE_URL: ${env(DATABASE_URL), default=""}
+          PINECONE_API_KEY: ${env(PINECONE_API_KEY), default=""}
+          PINECONE_INDEX_NAME: ${env(PINECONE_INDEX_NAME), default=""}
+          PINECONE_NAMESPACE: ${env(PINECONE_NAMESPACE), default=""}
+          LLM_PROVIDER: ${env(LLM_PROVIDER), default="deepseek"}
+          LLM_BASE_URL: ${env(LLM_BASE_URL), default="https://api.deepseek.com"}
+          LLM_MODEL: ${env(LLM_MODEL), default="deepseek-chat"}
+          DEEPSEEK_API_KEY: ${env(DEEPSEEK_API_KEY), default=""}
+          OPENAI_API_KEY: ${env(OPENAI_API_KEY), default=""}
+          JWT_SECRET: ${env(JWT_SECRET), default=""}
         customRuntimeConfig:
           command:
             - ./ai-novel-backend
