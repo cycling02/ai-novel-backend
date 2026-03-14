@@ -32,7 +32,7 @@ func NewNovelCreationGraph(components *components.Components) (*NovelCreationGra
 	graph := compose.NewGraph[map[string]any, map[string]any]()
 
 	// Node 1: 大纲生成
-	graph.AddLambdaNode(
+	err := graph.AddLambdaNode(
 		"outline_generator",
 		compose.InvokableLambda(func(ctx context.Context, input map[string]any) (map[string]any, error) {
 			// 调用大纲生成链
@@ -48,9 +48,12 @@ func NewNovelCreationGraph(components *components.Components) (*NovelCreationGra
 		}),
 		compose.WithOutputKey("outline"),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("添加 outline_generator 节点失败：%w", err)
+	}
 
 	// Node 2: 角色设定
-	graph.AddLambdaNode(
+	err = graph.AddLambdaNode(
 		"character_creator",
 		compose.InvokableLambda(func(ctx context.Context, input map[string]any) (map[string]any, error) {
 			output := map[string]any{
@@ -64,9 +67,12 @@ func NewNovelCreationGraph(components *components.Components) (*NovelCreationGra
 		}),
 		compose.WithInputKey("outline"),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("添加 character_creator 节点失败：%w", err)
+	}
 
 	// Node 3: 世界观设定
-	graph.AddLambdaNode(
+	err = graph.AddLambdaNode(
 		"world_builder",
 		compose.InvokableLambda(func(ctx context.Context, input map[string]any) (map[string]any, error) {
 			output := map[string]any{
@@ -80,9 +86,12 @@ func NewNovelCreationGraph(components *components.Components) (*NovelCreationGra
 		}),
 		compose.WithInputKey("outline"),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("添加 world_builder 节点失败：%w", err)
+	}
 
 	// Node 4: 章节生成（并行处理角色和世界观）
-	graph.AddLambdaNode(
+	err = graph.AddLambdaNode(
 		"chapter_writer",
 		compose.InvokableLambda(func(ctx context.Context, input map[string]any) (map[string]any, error) {
 			output := map[string]any{
@@ -95,9 +104,12 @@ func NewNovelCreationGraph(components *components.Components) (*NovelCreationGra
 			return output, nil
 		}),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("添加 chapter_writer 节点失败：%w", err)
+	}
 
 	// Node 5: 内容审核
-	graph.AddLambdaNode(
+	err = graph.AddLambdaNode(
 		"content_reviewer",
 		compose.InvokableLambda(func(ctx context.Context, input map[string]any) (map[string]any, error) {
 			output := map[string]any{
@@ -112,9 +124,12 @@ func NewNovelCreationGraph(components *components.Components) (*NovelCreationGra
 		}),
 		compose.WithInputKey("content"),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("添加 content_reviewer 节点失败：%w", err)
+	}
 
 	// 添加边
-	err := graph.AddEdge("outline_generator", "character_creator")
+	err = graph.AddEdge("outline_generator", "character_creator")
 	if err != nil {
 		return nil, fmt.Errorf("添加边 outline_generator->character_creator 失败：%w", err)
 	}

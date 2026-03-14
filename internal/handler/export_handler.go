@@ -66,5 +66,7 @@ func (h *ExportHandler) Export(c *gin.Context) {
 			"message":  "PDF 导出功能开发中",
 			"fileName": result.FileName,
 		})
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的导出格式"})
 	}
 }
