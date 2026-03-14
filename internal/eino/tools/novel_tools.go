@@ -42,7 +42,9 @@ func (t *CharacterQueryTool) Invoke(ctx context.Context, argsInJSON string) (res
 		NovelID       string `json:"novel_id"`
 		CharacterName string `json:"character_name"`
 	}
-	json.Unmarshal([]byte(argsInJSON), &args)
+	if err := json.Unmarshal([]byte(argsInJSON), &args); err != nil {
+		return "", err
+	}
 
 	// 实际实现应该查询数据库
 	result := map[string]interface{}{
@@ -92,7 +94,9 @@ func (t *WorldSettingQueryTool) Invoke(ctx context.Context, argsInJSON string) (
 		Category string `json:"category"`
 		Keyword  string `json:"keyword"`
 	}
-	json.Unmarshal([]byte(argsInJSON), &args)
+	if err := json.Unmarshal([]byte(argsInJSON), &args); err != nil {
+		return "", err
+	}
 
 	result := map[string]interface{}{
 		"settings": []map[string]interface{}{
@@ -141,7 +145,9 @@ func (t *PlotOutlineTool) Invoke(ctx context.Context, argsInJSON string) (result
 		CurrentChapter int    `json:"current_chapter"`
 		Direction      string `json:"direction"`
 	}
-	json.Unmarshal([]byte(argsInJSON), &args)
+	if err := json.Unmarshal([]byte(argsInJSON), &args); err != nil {
+		return "", err
+	}
 
 	result := map[string]interface{}{
 		"outline": "这是生成的大纲建议...",
@@ -189,7 +195,9 @@ func (t *StyleTransferTool) Invoke(ctx context.Context, argsInJSON string) (resu
 		Style   string `json:"style"`
 		Tone    string `json:"tone"`
 	}
-	json.Unmarshal([]byte(argsInJSON), &args)
+	if err := json.Unmarshal([]byte(argsInJSON), &args); err != nil {
+		return "", err
+	}
 
 	result := map[string]interface{}{
 		"original": args.Content,

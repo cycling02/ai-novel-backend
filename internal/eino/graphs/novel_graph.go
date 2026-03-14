@@ -114,11 +114,26 @@ func NewNovelCreationGraph(components *components.Components) (*NovelCreationGra
 	)
 
 	// 添加边
-	graph.AddEdge("outline_generator", "character_creator")
-	graph.AddEdge("outline_generator", "world_builder")
-	graph.AddEdge("character_creator", "chapter_writer")
-	graph.AddEdge("world_builder", "chapter_writer")
-	graph.AddEdge("chapter_writer", "content_reviewer")
+	err := graph.AddEdge("outline_generator", "character_creator")
+	if err != nil {
+		return nil, fmt.Errorf("添加边 outline_generator->character_creator 失败：%w", err)
+	}
+	err = graph.AddEdge("outline_generator", "world_builder")
+	if err != nil {
+		return nil, fmt.Errorf("添加边 outline_generator->world_builder 失败：%w", err)
+	}
+	err = graph.AddEdge("character_creator", "chapter_writer")
+	if err != nil {
+		return nil, fmt.Errorf("添加边 character_creator->chapter_writer 失败：%w", err)
+	}
+	err = graph.AddEdge("world_builder", "chapter_writer")
+	if err != nil {
+		return nil, fmt.Errorf("添加边 world_builder->chapter_writer 失败：%w", err)
+	}
+	err = graph.AddEdge("chapter_writer", "content_reviewer")
+	if err != nil {
+		return nil, fmt.Errorf("添加边 chapter_writer->content_reviewer 失败：%w", err)
+	}
 
 	// 编译 Graph
 	rCtx := context.Background()

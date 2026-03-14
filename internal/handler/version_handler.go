@@ -85,7 +85,10 @@ func (h *VersionHandler) ListVersions(c *gin.Context) {
 func (h *VersionHandler) GetVersion(c *gin.Context) {
 	chapterID := c.Param("chapterId")
 	var versionNum int
-	fmt.Sscanf(c.Param("versionNum"), "%d", &versionNum)
+	if _, err := fmt.Sscanf(c.Param("versionNum"), "%d", &versionNum); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的版本号"})
+		return
+	}
 
 	version, err := h.versionService.GetVersion(c.Request.Context(), chapterID, versionNum)
 	if err != nil {
@@ -101,7 +104,10 @@ func (h *VersionHandler) GetVersion(c *gin.Context) {
 func (h *VersionHandler) Rollback(c *gin.Context) {
 	chapterID := c.Param("chapterId")
 	var versionNum int
-	fmt.Sscanf(c.Param("versionNum"), "%d", &versionNum)
+	if _, err := fmt.Sscanf(c.Param("versionNum"), "%d", &versionNum); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的版本号"})
+		return
+	}
 
 	userID, _ := c.Get("user_id")
 	if userID == nil {

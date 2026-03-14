@@ -17,7 +17,7 @@ import (
 
 // Components 包含所有 Eino 组件
 type Components struct {
-	ChatModel    model.ChatModel
+	ChatModel    model.ToolCallingChatModel
 	Embedding    embedding.Embedder
 	Retriever    retriever.Retriever
 	ChatTemplate prompt.ChatTemplate
@@ -56,7 +56,7 @@ func InitComponents(cfg *config.Config) (*Components, error) {
 }
 
 // initChatModel 初始化 ChatModel（使用 OpenAI 兼容接口支持 DeepSeek）
-func initChatModel(cfg config.LLMConfig) (model.ChatModel, error) {
+func initChatModel(cfg config.LLMConfig) (model.ToolCallingChatModel, error) {
 	baseURL := cfg.BaseURL
 	if baseURL == "" {
 		baseURL = "https://api.deepseek.com"
